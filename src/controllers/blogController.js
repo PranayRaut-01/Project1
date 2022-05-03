@@ -12,9 +12,9 @@ const createBlog = async function (req, res) {
 
     const authorId = blogData.authorId;
 
-    const presentAuthor = await authorModel.findById({ _id: authorId })
-    if (!presentAuthor)
-    return res.status(404).send({ status: false, msg: "Author not present" });
+    const foundAuthor = await authorModel.findById({ _id: authorId })
+    if (!foundAuthor)
+    return res.status(404).send({ status: false, msg: "Author not found" });
 
     const titleData = blogData.title;
     if (!titleData)
@@ -60,19 +60,20 @@ const getBlogs = async function (req, res) {
         return res.status(200).send({ status: true, data: getBlog });
 
       if (getBlog.length == 0)
-        return res.status(400).send({ status: false, msg: "No blog found" });
+        return res.status(404).send({ status: false, msg: "No blog found" });
     }
 
     queryDetails.isDeleted = false;
     queryDetails.isPublished = true;
 
+   //// check validaion of authorId///////////
     const authorId = queryDetails.authorId;
     if(authorId){
     if (!mongoose.Types.ObjectId.isValid(authorId)) {
       return res.status(400).send({ status: false, msg: "Provide valid authorId" });
     }
   }
-    //// its used for check to validaion of authorId///////////
+   
 
     const specificBlogs = await blogModel.find(queryDetails);
     if (specificBlogs.length != 0)
@@ -149,14 +150,28 @@ const blogDeleteByQuery= async function (req, res) {
   try {
     
     const data = req.query
-    if (data) {
-      const deletedBlog = await blogModel.updateMany({ $or: [{authorId:data.authorId},{category:data.category},{tags:data.tags},{subcategory:data.subcategory},{isPublished:data.isPublished}] },
-         { $set: { isDeleted: true, deletedAt: Date.now()  }} ,{new:true}
-         );
-    
-         if(deletedBlog.modifiedCount===0)
-            return res.status(404).send({status:false,msg:"blogs not found"})
+    const authorIdFromToken = req.authorId
 
+    if(Object.keys(data).length == 0)
+    return res.status(400).send({status:false,msg:"Please add queries"})
+    data.isDeleted = false;
+
+    if(data.authorId){
+      if (!mongoose.Types.ObjectId.isValid(data.authorId)) {
+        return res.status(400).send({ status: false, msg: "Provide valid authorId" });
+      }
+    }
+
+    if (data) {
+      const allBlog = await blogModel.find(data);
+      
+      const filteredBlog = allBlog.map(selectedBlog=>{
+      if(selectedBlog.authorId.toString() === authorIdFromToken) return selectedBlog._id })
+      
+      if(filteredBlog.length===0)
+        return res.status(404).send({status:false,msg:"blogs not found"})
+
+      const deleteBlog= await blogModel.updateMany({_id:{$in:filteredBlog}},{$set:{isDeleted:true,deletedAt:Date.now()}})
       return res.status(200).send({ status: true, msg: "Your blog is deleted" })
     }
    

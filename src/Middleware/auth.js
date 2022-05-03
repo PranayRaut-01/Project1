@@ -11,10 +11,11 @@ const authenticAuthor = function (req, res, next) {
       return res.status(404).send({ status: false, msg: "Token must be present" });
     }
 
-    jwt.verify(token, "Group35-Project1", function (error, data) { 
+    jwt.verify(token, "Group35-Project1", function (error, decodedToken) { 
       if (error) {
         return res.status(401).send({ status: false, msg: "token invalid" });
       }
+      req.authorId= decodedToken.authorId
       next();
     });
 
@@ -29,17 +30,13 @@ const authenticAuthor = function (req, res, next) {
 const authorizedAuthor = async function (req, res, next) {
   try {
 
-    const token = req.headers["x-api-key"];
-    let decodeddata;
-    jwt.verify(token, "Group35-Project1", function (error, data) { decodeddata = data });
-
     const bodyAuthorId = req.body.authorId
     if(bodyAuthorId){
       if (!mongoose.Types.ObjectId.isValid(bodyAuthorId)) {
         return res.status(400).send({ status: false, msg: "Provide valid authorId" });
       }
 
-      const userLoggedIn = decodeddata.authorId;
+      const userLoggedIn = req.authorId;
       if (bodyAuthorId != userLoggedIn) {
         return res.status(403).send({status: false,msg: "You are not authorised for this request"});
       } 
@@ -60,7 +57,7 @@ const authorizedAuthor = async function (req, res, next) {
       return res.status(404).send({ status: false, msg: "No blog with this Id" });
 
       const findAuthorId = findBlog.authorId;
-      const userLoggedIn = decodeddata.authorId;
+      const userLoggedIn = req.authorId;
       if (findAuthorId != userLoggedIn) {
         return res.status(403).send({status: false,msg: "You are not authorised for this request"});
       } 
@@ -68,23 +65,8 @@ const authorizedAuthor = async function (req, res, next) {
         return next();
       }
     }
-   
-     const authorId = req.query.authorId;
-    if(authorId){
-    if (!mongoose.Types.ObjectId.isValid(authorId)) {
-      return res.status(400).send({ status: false, msg: "provide valid authorId" });
-    }
-
-    if (authorId != decodeddata.authorId) {
-      return res.status(403).send({ status: false,msg: "You are not authorised for this request"});
-    } 
-    else {
-     return next();
-    }
-  }
-
-    //if no authorId or blogId is not received through params or query or body
-    return res.status(400).send({status:false,msg:"authorId or blogId is required"})   
+    
+    return res.status(400).send({status:false,msg:" blogId is required"})   
 
   } 
   catch (err) {

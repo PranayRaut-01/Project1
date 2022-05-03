@@ -32,9 +32,12 @@ const createAuthor = async function (req, res) {
 
     const checkEmail = await authorModel.findOne({ email: emailData });
     if (checkEmail)
-      return res.status(400).send({ status: false, msg: "This email already exists" });
+      return res.status(409).send({ status: false, msg: "This email already exists" });
 
     const titleData = body.title;
+    if(!titleData)
+    return  res.status(400).send({ status: false, msg: "Provide title" });
+
     if (titleData) {
       if (titleData == "Mr" || titleData == "Mrs" || titleData == "Miss") {
 
@@ -42,13 +45,8 @@ const createAuthor = async function (req, res) {
         return res.status(201).send({ status: true, data: authorCreation });
       }
       else
-        return res.status(400).send({ status: false, msg: "Provide correct title" });
+        return res.status(400).send({ status: false, msg: "Please choose title from Mr, Mrs and Miss " });
     }
-
-      const authorCreation = await authorModel.create(body);
-      return res.status(201).send({status:true, data: authorCreation})
-    
-
   }
   catch (err) {
     res.status(500).send({ status: false, Error: err.message });

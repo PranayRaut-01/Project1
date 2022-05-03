@@ -19,7 +19,7 @@ router.put('/blogs/:blogId',middleware.authenticAuthor,middleware.authorizedAuth
 
 router.delete('/blogs/:blogId',middleware.authenticAuthor,middleware.authorizedAuthor,blogController.deleteBlog)
 
-router.delete('/blogs',middleware.authenticAuthor,middleware.authorizedAuthor,blogController.blogDeleteByQuery)
+router.delete('/blogs',middleware.authenticAuthor,blogController.blogDeleteByQuery)
 
 router.post('/login',authorController.loginAuthor)
 
